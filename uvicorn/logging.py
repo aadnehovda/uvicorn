@@ -26,9 +26,7 @@ class ColourizedFormatter(logging.Formatter):
         logging.INFO: lambda level_name: click.style(str(level_name), fg="green"),
         logging.WARNING: lambda level_name: click.style(str(level_name), fg="yellow"),
         logging.ERROR: lambda level_name: click.style(str(level_name), fg="red"),
-        logging.CRITICAL: lambda level_name: click.style(
-            str(level_name), fg="bright_red"
-        ),
+        logging.CRITICAL: lambda level_name: click.style(str(level_name), fg="bright_red"),
     }
 
     def __init__(
@@ -98,22 +96,12 @@ class AccessFormatter(ColourizedFormatter):
 
     def formatMessage(self, record: logging.LogRecord) -> str:
         recordcopy = copy(record)
-        (
-            client_addr,
-            method,
-            full_path,
-            http_version,
-            status_code,
-        ) = recordcopy.args  # type: ignore[misc]
+        (client_addr, method, full_path, http_version, status_code) = recordcopy.args  # type: ignore[misc]
         status_code = self.get_status_code(int(status_code))  # type: ignore[arg-type]
         request_line = "%s %s HTTP/%s" % (method, full_path, http_version)
         if self.use_colors:
             request_line = click.style(request_line, bold=True)
         recordcopy.__dict__.update(
-            {
-                "client_addr": client_addr,
-                "request_line": request_line,
-                "status_code": status_code,
-            }
+            {"client_addr": client_addr, "request_line": request_line, "status_code": status_code}
         )
         return super().formatMessage(recordcopy)

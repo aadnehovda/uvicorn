@@ -94,14 +94,9 @@ class Server:
 
         config = self.config
 
-        def create_protocol(
-            _loop: asyncio.AbstractEventLoop | None = None,
-        ) -> asyncio.Protocol:
+        def create_protocol(_loop: asyncio.AbstractEventLoop | None = None) -> asyncio.Protocol:
             return config.http_protocol_class(  # type: ignore[call-arg]
-                config=config,
-                server_state=self.server_state,
-                app_state=self.lifespan.state,
-                _loop=_loop,
+                config=config, server_state=self.server_state, app_state=self.lifespan.state, _loop=_loop
             )
 
         loop = asyncio.get_running_loop()
@@ -111,9 +106,7 @@ class Server:
             # Explicitly passed a list of open sockets.
             # We use this when the server is run from a Gunicorn worker.
 
-            def _share_socket(
-                sock: socket.SocketType,
-            ) -> socket.SocketType:  # pragma py-linux pragma: py-darwin
+            def _share_socket(sock: socket.SocketType) -> socket.SocketType:  # pragma py-linux pragma: py-darwin
                 # Windows requires the socket be explicitly shared across
                 # multiple workers (processes).
                 from socket import fromshare  # type: ignore[attr-defined]
@@ -126,18 +119,14 @@ class Server:
                 is_windows = platform.system() == "Windows"
                 if config.workers > 1 and is_windows:  # pragma: py-not-win32
                     sock = _share_socket(sock)  # type: ignore[assignment]
-                server = await loop.create_server(
-                    create_protocol, sock=sock, ssl=config.ssl, backlog=config.backlog
-                )
+                server = await loop.create_server(create_protocol, sock=sock, ssl=config.ssl, backlog=config.backlog)
                 self.servers.append(server)
             listeners = sockets
 
         elif config.fd is not None:  # pragma: py-win32
             # Use an existing socket, from a file descriptor.
             sock = socket.fromfd(config.fd, socket.AF_UNIX, socket.SOCK_STREAM)
-            server = await loop.create_server(
-                create_protocol, sock=sock, ssl=config.ssl, backlog=config.backlog
-            )
+            server = await loop.create_server(create_protocol, sock=sock, ssl=config.ssl, backlog=config.backlog)
             assert server.sockets is not None  # mypy
             listeners = server.sockets
             self.servers = [server]
@@ -159,11 +148,7 @@ class Server:
             # Standard case. Create a socket from a host/port pair.
             try:
                 server = await loop.create_server(
-                    create_protocol,
-                    host=config.host,
-                    port=config.port,
-                    ssl=config.ssl,
-                    backlog=config.backlog,
+                    create_protocol, host=config.host, port=config.port, ssl=config.ssl, backlog=config.backlog
                 )
             except OSError as exc:
                 logger.error(exc)
@@ -188,15 +173,10 @@ class Server:
 
         if config.fd is not None:  # pragma: py-win32
             sock = listeners[0]
-            logger.info(
-                "Uvicorn running on socket %s (Press CTRL+C to quit)",
-                sock.getsockname(),
-            )
+            logger.info("Uvicorn running on socket %s (Press CTRL+C to quit)", sock.getsockname())
 
         elif config.uds is not None:  # pragma: py-win32
-            logger.info(
-                "Uvicorn running on unix socket %s (Press CTRL+C to quit)", config.uds
-            )
+            logger.info("Uvicorn running on unix socket %s (Press CTRL+C to quit)", config.uds)
 
         else:
             addr_format = "%s://%s:%d"
@@ -211,18 +191,8 @@ class Server:
 
             protocol_name = "https" if config.ssl else "http"
             message = f"Uvicorn running on {addr_format} (Press CTRL+C to quit)"
-            color_message = (
-                "Uvicorn running on "
-                + click.style(addr_format, bold=True)
-                + " (Press CTRL+C to quit)"
-            )
-            logger.info(
-                message,
-                protocol_name,
-                host,
-                port,
-                extra={"color_message": color_message},
-            )
+            color_message = "Uvicorn running on " + click.style(addr_format, bold=True) + " (Press CTRL+C to quit)"
+            logger.info(message, protocol_name, host, port, extra={"color_message": color_message})
 
     async def main_loop(self) -> None:
         counter = 0
@@ -244,9 +214,7 @@ class Server:
             else:
                 date_header = []
 
-            self.server_state.default_headers = (
-                date_header + self.config.encoded_headers
-            )
+            self.server_state.default_headers = date_header + self.config.encoded_headers
 
             # Callback to `callback_notify` once every `timeout_notify` seconds.
             if self.config.callback_notify is not None:
@@ -277,15 +245,9 @@ class Server:
 
         # When 3.10 is not supported anymore, use `async with asyncio.timeout(...):`.
         try:
-            await asyncio.wait_for(
-                self._wait_tasks_to_complete(),
-                timeout=self.config.timeout_graceful_shutdown,
-            )
+            await asyncio.wait_for(self._wait_tasks_to_complete(), timeout=self.config.timeout_graceful_shutdown)
         except asyncio.TimeoutError:
-            logger.error(
-                "Cancel %s running task(s), timeout graceful shutdown exceeded",
-                len(self.server_state.tasks),
-            )
+            logger.error("Cancel %s running task(s), timeout graceful shutdown exceeded", len(self.server_state.tasks))
             for t in self.server_state.tasks:
                 if sys.version_info < (3, 9):  # pragma: py-gte-39
                     t.cancel()

@@ -46,11 +46,7 @@ def tls_certificate_authority() -> "trustme.CA":
 
 @pytest.fixture
 def tls_certificate(tls_certificate_authority: "trustme.CA") -> "trustme.LeafCert":
-    return tls_certificate_authority.issue_cert(
-        "localhost",
-        "127.0.0.1",
-        "::1",
-    )
+    return tls_certificate_authority.issue_cert("localhost", "127.0.0.1", "::1")
 
 
 @pytest.fixture
@@ -68,9 +64,7 @@ def tls_ca_certificate_private_key_path(tls_certificate_authority: "trustme.CA")
 @pytest.fixture
 def tls_certificate_private_key_encrypted_path(tls_certificate):
     private_key = serialization.load_pem_private_key(
-        tls_certificate.private_key_pem.bytes(),
-        password=None,
-        backend=default_backend(),
+        tls_certificate.private_key_pem.bytes(), password=None, backend=default_backend()
     )
     encrypted_key = private_key.private_bytes(
         serialization.Encoding.PEM,
@@ -146,12 +140,7 @@ def reload_directory_structure(tmp_path_factory: pytest.TempPathFactory):
     for app in apps:
         app_path = root / app
         app_path.mkdir()
-        dir_files = [
-            ("src", ["main.py"]),
-            ("js", ["main.js"]),
-            ("css", ["main.css"]),
-            ("sub", ["sub.py"]),
-        ]
+        dir_files = [("src", ["main.py"]), ("js", ["main.js"]), ("css", ["main.css"]), ("sub", ["sub.py"])]
         for directory, files in dir_files:
             directory_path = app_path / directory
             directory_path.mkdir()
@@ -184,19 +173,11 @@ def short_socket_name(tmp_path, tmp_path_factory):  # pragma: py-win32
     identifier_len = len(identifier.encode())
     tmp_dir = Path("/tmp").resolve()
     os_tmp_dir = Path(os.getenv("TMPDIR", "/tmp")).resolve()
-    basetemp = Path(
-        str(tmp_path_factory.getbasetemp()),
-    ).resolve()
-    hash_basetemp = md5(
-        str(basetemp).encode(),
-    ).hexdigest()
+    basetemp = Path(str(tmp_path_factory.getbasetemp())).resolve()
+    hash_basetemp = md5(str(basetemp).encode()).hexdigest()
 
     def make_tmp_dir(base_dir):
-        return TemporaryDirectory(
-            dir=str(base_dir),
-            prefix="p-",
-            suffix=f"-{hash_basetemp}",
-        )
+        return TemporaryDirectory(dir=str(base_dir), prefix="p-", suffix=f"-{hash_basetemp}")
 
     paths = basetemp, os_tmp_dir, tmp_dir
     for _num, tmp_dir_path in enumerate(paths, 1):
@@ -250,15 +231,10 @@ def unused_tcp_port() -> int:
     params=[
         pytest.param(
             "uvicorn.protocols.websockets.wsproto_impl:WSProtocol",
-            marks=pytest.mark.skipif(
-                not importlib.util.find_spec("wsproto"), reason="wsproto not installed."
-            ),
+            marks=pytest.mark.skipif(not importlib.util.find_spec("wsproto"), reason="wsproto not installed."),
             id="wsproto",
         ),
-        pytest.param(
-            "uvicorn.protocols.websockets.websockets_impl:WebSocketProtocol",
-            id="websockets",
-        ),
+        pytest.param("uvicorn.protocols.websockets.websockets_impl:WebSocketProtocol", id="websockets"),
     ]
 )
 def ws_protocol_cls(request: pytest.FixtureRequest):
@@ -269,10 +245,7 @@ def ws_protocol_cls(request: pytest.FixtureRequest):
     params=[
         pytest.param(
             "uvicorn.protocols.http.httptools_impl:HttpToolsProtocol",
-            marks=pytest.mark.skipif(
-                not importlib.util.find_spec("httptools"),
-                reason="httptools not installed.",
-            ),
+            marks=pytest.mark.skipif(not importlib.util.find_spec("httptools"), reason="httptools not installed."),
             id="httptools",
         ),
         pytest.param("uvicorn.protocols.http.h11_impl:H11Protocol", id="h11"),

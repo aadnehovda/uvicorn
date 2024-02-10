@@ -48,25 +48,14 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
         return
     click.echo(
         "Running uvicorn %s with %s %s on %s"
-        % (
-            uvicorn.__version__,
-            platform.python_implementation(),
-            platform.python_version(),
-            platform.system(),
-        )
+        % (uvicorn.__version__, platform.python_implementation(), platform.python_version(), platform.system())
     )
     ctx.exit()
 
 
 @click.command(context_settings={"auto_envvar_prefix": "UVICORN"})
 @click.argument("app", envvar="UVICORN_APP")
-@click.option(
-    "--host",
-    type=str,
-    default="127.0.0.1",
-    help="Bind socket to this host.",
-    show_default=True,
-)
+@click.option("--host", type=str, default="127.0.0.1", help="Bind socket to this host.", show_default=True)
 @click.option(
     "--port",
     type=int,
@@ -75,16 +64,13 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     show_default=True,
 )
 @click.option("--uds", type=str, default=None, help="Bind to a UNIX domain socket.")
-@click.option(
-    "--fd", type=int, default=None, help="Bind to socket from this file descriptor."
-)
+@click.option("--fd", type=int, default=None, help="Bind to socket from this file descriptor.")
 @click.option("--reload", is_flag=True, default=False, help="Enable auto-reload.")
 @click.option(
     "--reload-dir",
     "reload_dirs",
     multiple=True,
-    help="Set reload directories explicitly, instead of using the current working"
-    " directory.",
+    help="Set reload directories explicitly, instead of using the current working" " directory.",
     type=click.Path(exists=True),
 )
 @click.option(
@@ -109,8 +95,7 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     type=float,
     default=0.25,
     show_default=True,
-    help="Delay between previous and next check if application needs to be."
-    " Defaults to 0.25s.",
+    help="Delay between previous and next check if application needs to be." " Defaults to 0.25s.",
 )
 @click.option(
     "--workers",
@@ -119,54 +104,20 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     help="Number of worker processes. Defaults to the $WEB_CONCURRENCY environment"
     " variable if available, or 1. Not valid with --reload.",
 )
+@click.option("--loop", type=LOOP_CHOICES, default="auto", help="Event loop implementation.", show_default=True)
+@click.option("--http", type=HTTP_CHOICES, default="auto", help="HTTP protocol implementation.", show_default=True)
+@click.option("--ws", type=WS_CHOICES, default="auto", help="WebSocket protocol implementation.", show_default=True)
 @click.option(
-    "--loop",
-    type=LOOP_CHOICES,
-    default="auto",
-    help="Event loop implementation.",
-    show_default=True,
+    "--ws-max-size", type=int, default=16777216, help="WebSocket max size message in bytes", show_default=True
 )
 @click.option(
-    "--http",
-    type=HTTP_CHOICES,
-    default="auto",
-    help="HTTP protocol implementation.",
-    show_default=True,
+    "--ws-max-queue", type=int, default=32, help="The maximum length of the WebSocket message queue.", show_default=True
 )
 @click.option(
-    "--ws",
-    type=WS_CHOICES,
-    default="auto",
-    help="WebSocket protocol implementation.",
-    show_default=True,
+    "--ws-ping-interval", type=float, default=20.0, help="WebSocket ping interval in seconds.", show_default=True
 )
 @click.option(
-    "--ws-max-size",
-    type=int,
-    default=16777216,
-    help="WebSocket max size message in bytes",
-    show_default=True,
-)
-@click.option(
-    "--ws-max-queue",
-    type=int,
-    default=32,
-    help="The maximum length of the WebSocket message queue.",
-    show_default=True,
-)
-@click.option(
-    "--ws-ping-interval",
-    type=float,
-    default=20.0,
-    help="WebSocket ping interval in seconds.",
-    show_default=True,
-)
-@click.option(
-    "--ws-ping-timeout",
-    type=float,
-    default=20.0,
-    help="WebSocket ping timeout in seconds.",
-    show_default=True,
+    "--ws-ping-timeout", type=float, default=20.0, help="WebSocket ping timeout in seconds.", show_default=True
 )
 @click.option(
     "--ws-per-message-deflate",
@@ -175,13 +126,7 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     help="WebSocket per-message-deflate compression",
     show_default=True,
 )
-@click.option(
-    "--lifespan",
-    type=LIFESPAN_CHOICES,
-    default="auto",
-    help="Lifespan implementation.",
-    show_default=True,
-)
+@click.option("--lifespan", type=LIFESPAN_CHOICES, default="auto", help="Lifespan implementation.", show_default=True)
 @click.option(
     "--interface",
     type=INTERFACE_CHOICES,
@@ -190,11 +135,7 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     show_default=True,
 )
 @click.option(
-    "--env-file",
-    type=click.Path(exists=True),
-    default=None,
-    help="Environment configuration file.",
-    show_default=True,
+    "--env-file", type=click.Path(exists=True), default=None, help="Environment configuration file.", show_default=True
 )
 @click.option(
     "--log-config",
@@ -203,44 +144,19 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     help="Logging configuration file. Supported formats: .ini, .json, .yaml.",
     show_default=True,
 )
-@click.option(
-    "--log-level",
-    type=LEVEL_CHOICES,
-    default=None,
-    help="Log level. [default: info]",
-    show_default=True,
-)
-@click.option(
-    "--access-log/--no-access-log",
-    is_flag=True,
-    default=True,
-    help="Enable/Disable access log.",
-)
-@click.option(
-    "--use-colors/--no-use-colors",
-    is_flag=True,
-    default=None,
-    help="Enable/Disable colorized logging.",
-)
+@click.option("--log-level", type=LEVEL_CHOICES, default=None, help="Log level. [default: info]", show_default=True)
+@click.option("--access-log/--no-access-log", is_flag=True, default=True, help="Enable/Disable access log.")
+@click.option("--use-colors/--no-use-colors", is_flag=True, default=None, help="Enable/Disable colorized logging.")
 @click.option(
     "--proxy-headers/--no-proxy-headers",
     is_flag=True,
     default=True,
-    help="Enable/Disable X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port to "
-    "populate remote address info.",
+    help="Enable/Disable X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port to " "populate remote address info.",
 )
 @click.option(
-    "--server-header/--no-server-header",
-    is_flag=True,
-    default=True,
-    help="Enable/Disable default Server header.",
+    "--server-header/--no-server-header", is_flag=True, default=True, help="Enable/Disable default Server header."
 )
-@click.option(
-    "--date-header/--no-date-header",
-    is_flag=True,
-    default=True,
-    help="Enable/Disable default Date header.",
-)
+@click.option("--date-header/--no-date-header", is_flag=True, default=True, help="Enable/Disable default Date header.")
 @click.option(
     "--forwarded-allow-ips",
     type=str,
@@ -258,15 +174,9 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     "--limit-concurrency",
     type=int,
     default=None,
-    help="Maximum number of concurrent connections or tasks to allow, before issuing"
-    " HTTP 503 responses.",
+    help="Maximum number of concurrent connections or tasks to allow, before issuing" " HTTP 503 responses.",
 )
-@click.option(
-    "--backlog",
-    type=int,
-    default=2048,
-    help="Maximum number of connections to hold in backlog",
-)
+@click.option("--backlog", type=int, default=2048, help="Maximum number of connections to hold in backlog")
 @click.option(
     "--limit-max-requests",
     type=int,
@@ -286,23 +196,9 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     default=None,
     help="Maximum number of seconds to wait for graceful shutdown.",
 )
-@click.option(
-    "--ssl-keyfile", type=str, default=None, help="SSL key file", show_default=True
-)
-@click.option(
-    "--ssl-certfile",
-    type=str,
-    default=None,
-    help="SSL certificate file",
-    show_default=True,
-)
-@click.option(
-    "--ssl-keyfile-password",
-    type=str,
-    default=None,
-    help="SSL keyfile password",
-    show_default=True,
-)
+@click.option("--ssl-keyfile", type=str, default=None, help="SSL key file", show_default=True)
+@click.option("--ssl-certfile", type=str, default=None, help="SSL certificate file", show_default=True)
+@click.option("--ssl-keyfile-password", type=str, default=None, help="SSL keyfile password", show_default=True)
 @click.option(
     "--ssl-version",
     type=int,
@@ -317,25 +213,12 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     help="Whether client certificate is required (see stdlib ssl module's)",
     show_default=True,
 )
+@click.option("--ssl-ca-certs", type=str, default=None, help="CA certificates file", show_default=True)
 @click.option(
-    "--ssl-ca-certs",
-    type=str,
-    default=None,
-    help="CA certificates file",
-    show_default=True,
+    "--ssl-ciphers", type=str, default="TLSv1", help="Ciphers to use (see stdlib ssl module's)", show_default=True
 )
 @click.option(
-    "--ssl-ciphers",
-    type=str,
-    default="TLSv1",
-    help="Ciphers to use (see stdlib ssl module's)",
-    show_default=True,
-)
-@click.option(
-    "--header",
-    "headers",
-    multiple=True,
-    help="Specify custom default HTTP response headers as a Name:Value pair",
+    "--header", "headers", multiple=True, help="Specify custom default HTTP response headers as a Name:Value pair"
 )
 @click.option(
     "--version",
@@ -571,10 +454,7 @@ def run(
 
     if (config.reload or config.workers > 1) and not isinstance(app, str):
         logger = logging.getLogger("uvicorn.error")
-        logger.warning(
-            "You must pass the application as an import string to enable 'reload' or "
-            "'workers'."
-        )
+        logger.warning("You must pass the application as an import string to enable 'reload' or " "'workers'.")
         sys.exit(1)
 
     if config.should_reload:

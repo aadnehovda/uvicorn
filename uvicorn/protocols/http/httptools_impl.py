@@ -23,19 +23,8 @@ from uvicorn._types import (
 )
 from uvicorn.config import Config
 from uvicorn.logging import TRACE_LOG_LEVEL
-from uvicorn.protocols.http.flow_control import (
-    CLOSE_HEADER,
-    HIGH_WATER_LIMIT,
-    FlowControl,
-    service_unavailable,
-)
-from uvicorn.protocols.utils import (
-    get_client_addr,
-    get_local_addr,
-    get_path_with_query_string,
-    get_remote_addr,
-    is_ssl,
-)
+from uvicorn.protocols.http.flow_control import CLOSE_HEADER, HIGH_WATER_LIMIT, FlowControl, service_unavailable
+from uvicorn.protocols.utils import get_client_addr, get_local_addr, get_path_with_query_string, get_remote_addr, is_ssl
 from uvicorn.server import ServerState
 
 HEADER_RE = re.compile(b'[\x00-\x1F\x7F()<>@,;:[]={} \t\\"]')
@@ -50,9 +39,7 @@ def _get_status_line(status_code: int) -> bytes:
     return b"".join([b"HTTP/1.1 ", str(status_code).encode(), b" ", phrase, b"\r\n"])
 
 
-STATUS_LINE = {
-    status_code: _get_status_line(status_code) for status_code in range(100, 600)
-}
+STATUS_LINE = {status_code: _get_status_line(status_code) for status_code in range(100, 600)}
 
 
 class HttpToolsProtocol(asyncio.Protocol):
@@ -197,9 +184,7 @@ class HttpToolsProtocol(asyncio.Protocol):
             output += [name, b": ", value, b"\r\n"]
         output.append(b"\r\n")
         protocol = self.ws_protocol_class(  # type: ignore[call-arg, misc]
-            config=self.config,
-            server_state=self.server_state,
-            app_state=self.app_state,
+            config=self.config, server_state=self.server_state, app_state=self.app_state
         )
         protocol.connection_made(self.transport)
         protocol.data_received(b"".join(output))
@@ -268,8 +253,7 @@ class HttpToolsProtocol(asyncio.Protocol):
 
         # Handle 503 responses when 'limit_concurrency' is exceeded.
         if self.limit_concurrency is not None and (
-            len(self.connections) >= self.limit_concurrency
-            or len(self.tasks) >= self.limit_concurrency
+            len(self.connections) >= self.limit_concurrency or len(self.tasks) >= self.limit_concurrency
         ):
             app = service_unavailable
             message = "Exceeded concurrency limit."
@@ -302,9 +286,7 @@ class HttpToolsProtocol(asyncio.Protocol):
             self.pipeline.appendleft((self.cycle, app))
 
     def on_body(self, body: bytes) -> None:
-        if (
-            self.parser.should_upgrade() and self._should_upgrade()
-        ) or self.cycle.response_complete:
+        if (self.parser.should_upgrade() and self._should_upgrade()) or self.cycle.response_complete:
             return
         self.cycle.body += body
         if len(self.cycle.body) > HIGH_WATER_LIMIT:
@@ -312,9 +294,7 @@ class HttpToolsProtocol(asyncio.Protocol):
         self.cycle.message_event.set()
 
     def on_message_complete(self) -> None:
-        if (
-            self.parser.should_upgrade() and self._should_upgrade()
-        ) or self.cycle.response_complete:
+        if (self.parser.should_upgrade() and self._should_upgrade()) or self.cycle.response_complete:
             return
         self.cycle.more_body = False
         self.cycle.message_event.set()
@@ -446,10 +426,7 @@ class RequestResponseCycle:
         response_start_event: "HTTPResponseStartEvent" = {
             "type": "http.response.start",
             "status": 500,
-            "headers": [
-                (b"content-type", b"text/plain; charset=utf-8"),
-                (b"connection", b"close"),
-            ],
+            "headers": [(b"content-type", b"text/plain; charset=utf-8"), (b"connection", b"close")],
         }
         await self.send(response_start_event)
         response_body_event: "HTTPResponseBodyEvent" = {
@@ -515,11 +492,7 @@ class RequestResponseCycle:
                     self.keep_alive = False
                 content.extend([name, b": ", value, b"\r\n"])
 
-            if (
-                self.chunked_encoding is None
-                and self.scope["method"] != "HEAD"
-                and status_code not in (204, 304)
-            ):
+            if self.chunked_encoding is None and self.scope["method"] != "HEAD" and status_code not in (204, 304):
                 # Neither content-length nor transfer-encoding specified
                 self.chunked_encoding = True
                 content.append(b"transfer-encoding: chunked\r\n")
@@ -584,11 +557,7 @@ class RequestResponseCycle:
         if self.disconnected or self.response_complete:
             message = {"type": "http.disconnect"}
         else:
-            message = {
-                "type": "http.request",
-                "body": self.body,
-                "more_body": self.more_body,
-            }
+            message = {"type": "http.request", "body": self.body, "more_body": self.more_body}
             self.body = b""
 
         return message

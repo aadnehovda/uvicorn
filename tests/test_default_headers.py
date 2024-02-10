@@ -23,29 +23,17 @@ async def test_default_default_headers(unused_tcp_port: int):
 @pytest.mark.anyio
 async def test_override_server_header(unused_tcp_port: int):
     config = Config(
-        app=app,
-        loop="asyncio",
-        limit_max_requests=1,
-        headers=[("Server", "over-ridden")],
-        port=unused_tcp_port,
+        app=app, loop="asyncio", limit_max_requests=1, headers=[("Server", "over-ridden")], port=unused_tcp_port
     )
     async with run_server(config):
         async with httpx.AsyncClient() as client:
             response = await client.get(f"http://127.0.0.1:{unused_tcp_port}")
-            assert (
-                response.headers["server"] == "over-ridden" and response.headers["date"]
-            )
+            assert response.headers["server"] == "over-ridden" and response.headers["date"]
 
 
 @pytest.mark.anyio
 async def test_disable_default_server_header(unused_tcp_port: int):
-    config = Config(
-        app=app,
-        loop="asyncio",
-        limit_max_requests=1,
-        server_header=False,
-        port=unused_tcp_port,
-    )
+    config = Config(app=app, loop="asyncio", limit_max_requests=1, server_header=False, port=unused_tcp_port)
     async with run_server(config):
         async with httpx.AsyncClient() as client:
             response = await client.get(f"http://127.0.0.1:{unused_tcp_port}")
@@ -64,20 +52,13 @@ async def test_override_server_header_multiple_times(unused_tcp_port: int):
     async with run_server(config):
         async with httpx.AsyncClient() as client:
             response = await client.get(f"http://127.0.0.1:{unused_tcp_port}")
-            assert (
-                response.headers["server"] == "over-ridden, another-value"
-                and response.headers["date"]
-            )
+            assert response.headers["server"] == "over-ridden, another-value" and response.headers["date"]
 
 
 @pytest.mark.anyio
 async def test_add_additional_header(unused_tcp_port: int):
     config = Config(
-        app=app,
-        loop="asyncio",
-        limit_max_requests=1,
-        headers=[("X-Additional", "new-value")],
-        port=unused_tcp_port,
+        app=app, loop="asyncio", limit_max_requests=1, headers=[("X-Additional", "new-value")], port=unused_tcp_port
     )
     async with run_server(config):
         async with httpx.AsyncClient() as client:
@@ -91,13 +72,7 @@ async def test_add_additional_header(unused_tcp_port: int):
 
 @pytest.mark.anyio
 async def test_disable_default_date_header(unused_tcp_port: int):
-    config = Config(
-        app=app,
-        loop="asyncio",
-        limit_max_requests=1,
-        date_header=False,
-        port=unused_tcp_port,
-    )
+    config = Config(app=app, loop="asyncio", limit_max_requests=1, date_header=False, port=unused_tcp_port)
     async with run_server(config):
         async with httpx.AsyncClient() as client:
             response = await client.get(f"http://127.0.0.1:{unused_tcp_port}")

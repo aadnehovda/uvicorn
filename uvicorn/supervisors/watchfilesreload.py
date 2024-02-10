@@ -13,20 +13,12 @@ from uvicorn.supervisors.basereload import BaseReload
 class FileFilter:
     def __init__(self, config: Config):
         default_includes = ["*.py"]
-        self.includes = [
-            default
-            for default in default_includes
-            if default not in config.reload_excludes
-        ]
+        self.includes = [default for default in default_includes if default not in config.reload_excludes]
         self.includes.extend(config.reload_includes)
         self.includes = list(set(self.includes))
 
         default_excludes = [".*", ".py[cod]", ".sw.*", "~*"]
-        self.excludes = [
-            default
-            for default in default_excludes
-            if default not in config.reload_includes
-        ]
+        self.excludes = [default for default in default_excludes if default not in config.reload_includes]
         self.exclude_dirs = []
         for e in config.reload_excludes:
             p = Path(e)
@@ -61,12 +53,7 @@ class FileFilter:
 
 
 class WatchFilesReload(BaseReload):
-    def __init__(
-        self,
-        config: Config,
-        target: Callable[[list[socket] | None], None],
-        sockets: list[socket],
-    ) -> None:
+    def __init__(self, config: Config, target: Callable[[list[socket] | None], None], sockets: list[socket]) -> None:
         super().__init__(config, target, sockets)
         self.reloader_name = "WatchFiles"
         self.reload_dirs = []

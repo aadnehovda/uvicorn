@@ -220,18 +220,9 @@ class WSProtocol(asyncio.Protocol):
     def send_500_response(self) -> None:
         if self.response_started or self.handshake_complete:
             return  # we cannot send responses anymore
-        headers = [
-            (b"content-type", b"text/plain; charset=utf-8"),
-            (b"connection", b"close"),
-        ]
-        output = self.conn.send(
-            wsproto.events.RejectConnection(
-                status_code=500, headers=headers, has_body=True
-            )
-        )
-        output += self.conn.send(
-            wsproto.events.RejectData(data=b"Internal Server Error")
-        )
+        headers = [(b"content-type", b"text/plain; charset=utf-8"), (b"connection", b"close")]
+        output = self.conn.send(wsproto.events.RejectConnection(status_code=500, headers=headers, has_body=True))
+        output += self.conn.send(wsproto.events.RejectData(data=b"Internal Server Error"))
         self.transport.write(output)
 
     async def run_asgi(self) -> None:
@@ -263,9 +254,7 @@ class WSProtocol(asyncio.Protocol):
             if message_type == "websocket.accept":
                 message = typing.cast(WebSocketAcceptEvent, message)
                 self.logger.info(
-                    '%s - "WebSocket %s" [accepted]',
-                    self.scope["client"],
-                    get_path_with_query_string(self.scope),
+                    '%s - "WebSocket %s" [accepted]', self.scope["client"], get_path_with_query_string(self.scope)
                 )
                 subprotocol = message.get("subprotocol")
                 extra_headers = self.default_headers + list(message.get("headers", []))
@@ -276,9 +265,7 @@ class WSProtocol(asyncio.Protocol):
                     self.handshake_complete = True
                     output = self.conn.send(
                         wsproto.events.AcceptConnection(
-                            subprotocol=subprotocol,
-                            extensions=extensions,
-                            extra_headers=extra_headers,
+                            subprotocol=subprotocol, extensions=extensions, extra_headers=extra_headers
                         )
                     )
                     self.transport.write(output)
@@ -286,9 +273,7 @@ class WSProtocol(asyncio.Protocol):
             elif message_type == "websocket.close":
                 self.queue.put_nowait({"type": "websocket.disconnect", "code": 1006})
                 self.logger.info(
-                    '%s - "WebSocket %s" 403',
-                    self.scope["client"],
-                    get_path_with_query_string(self.scope),
+                    '%s - "WebSocket %s" 403', self.scope["client"], get_path_with_query_string(self.scope)
                 )
                 self.handshake_complete = True
                 self.close_sent = True
@@ -311,9 +296,7 @@ class WSProtocol(asyncio.Protocol):
                 )
                 self.handshake_complete = True
                 event = events.RejectConnection(
-                    status_code=message["status"],
-                    headers=list(message["headers"]),
-                    has_body=True,
+                    status_code=message["status"], headers=list(message["headers"]), has_body=True
                 )
                 output = self.conn.send(event)
                 self.transport.write(output)
@@ -343,21 +326,14 @@ class WSProtocol(asyncio.Protocol):
                     self.close_sent = True
                     code = message.get("code", 1000)
                     reason = message.get("reason", "") or ""
-                    self.queue.put_nowait(
-                        {"type": "websocket.disconnect", "code": code}
-                    )
-                    output = self.conn.send(
-                        wsproto.events.CloseConnection(code=code, reason=reason)
-                    )
+                    self.queue.put_nowait({"type": "websocket.disconnect", "code": code})
+                    output = self.conn.send(wsproto.events.CloseConnection(code=code, reason=reason))
                     if not self.transport.is_closing():
                         self.transport.write(output)
                         self.transport.close()
 
                 else:
-                    msg = (
-                        "Expected ASGI message 'websocket.send' or 'websocket.close',"
-                        " but got '%s'."
-                    )
+                    msg = "Expected ASGI message 'websocket.send' or 'websocket.close'," " but got '%s'."
                     raise RuntimeError(msg % message_type)
             except LocalProtocolError as exc:
                 raise ClientDisconnected from exc
@@ -365,24 +341,17 @@ class WSProtocol(asyncio.Protocol):
             if message_type == "websocket.http.response.body":
                 message = typing.cast("WebSocketResponseBodyEvent", message)
                 body_finished = not message.get("more_body", False)
-                reject_data = events.RejectData(
-                    data=message["body"], body_finished=body_finished
-                )
+                reject_data = events.RejectData(data=message["body"], body_finished=body_finished)
                 output = self.conn.send(reject_data)
                 self.transport.write(output)
 
                 if body_finished:
-                    self.queue.put_nowait(
-                        {"type": "websocket.disconnect", "code": 1006}
-                    )
+                    self.queue.put_nowait({"type": "websocket.disconnect", "code": 1006})
                     self.close_sent = True
                     self.transport.close()
 
             else:
-                msg = (
-                    "Expected ASGI message 'websocket.http.response.body' "
-                    "but got '%s'."
-                )
+                msg = "Expected ASGI message 'websocket.http.response.body' " "but got '%s'."
                 raise RuntimeError(msg % message_type)
 
         else:

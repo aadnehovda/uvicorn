@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from asyncio import Queue
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from uvicorn import Config
 from uvicorn._types import (
@@ -16,10 +18,7 @@ from uvicorn._types import (
 
 LifespanReceiveMessage = Union[LifespanStartupEvent, LifespanShutdownEvent]
 LifespanSendMessage = Union[
-    LifespanStartupFailedEvent,
-    LifespanShutdownFailedEvent,
-    LifespanStartupCompleteEvent,
-    LifespanShutdownCompleteEvent,
+    LifespanStartupFailedEvent, LifespanShutdownFailedEvent, LifespanStartupCompleteEvent, LifespanShutdownCompleteEvent
 ]
 
 
@@ -40,7 +39,7 @@ class LifespanOn:
         self.startup_failed = False
         self.shutdown_failed = False
         self.should_exit = False
-        self.state: Dict[str, Any] = {}
+        self.state: dict[str, Any] = {}
 
     async def startup(self) -> None:
         self.logger.info("Waiting for application startup.")
@@ -67,9 +66,7 @@ class LifespanOn:
         await self.receive_queue.put(shutdown_event)
         await self.shutdown_event.wait()
 
-        if self.shutdown_failed or (
-            self.error_occured and self.config.lifespan == "on"
-        ):
+        if self.shutdown_failed or (self.error_occured and self.config.lifespan == "on"):
             self.logger.error("Application shutdown failed. Exiting.")
             self.should_exit = True
         else:

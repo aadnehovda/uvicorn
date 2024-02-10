@@ -17,11 +17,7 @@ multiprocessing.allow_connection_pickling()
 spawn = multiprocessing.get_context("spawn")
 
 
-def get_subprocess(
-    config: Config,
-    target: Callable[..., None],
-    sockets: list[socket],
-) -> SpawnProcess:
+def get_subprocess(config: Config, target: Callable[..., None], sockets: list[socket]) -> SpawnProcess:
     """
     Called in the parent process, to instantiate a new child process instance.
     The child is not yet started at this point.
@@ -40,21 +36,13 @@ def get_subprocess(
     except OSError:
         stdin_fileno = None
 
-    kwargs = {
-        "config": config,
-        "target": target,
-        "sockets": sockets,
-        "stdin_fileno": stdin_fileno,
-    }
+    kwargs = {"config": config, "target": target, "sockets": sockets, "stdin_fileno": stdin_fileno}
 
     return spawn.Process(target=subprocess_started, kwargs=kwargs)
 
 
 def subprocess_started(
-    config: Config,
-    target: Callable[..., None],
-    sockets: list[socket],
-    stdin_fileno: int | None,
+    config: Config, target: Callable[..., None], sockets: list[socket], stdin_fileno: int | None
 ) -> None:
     """
     Called when the child process starts.

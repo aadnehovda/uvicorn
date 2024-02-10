@@ -20,19 +20,8 @@ from uvicorn._types import (
 )
 from uvicorn.config import Config
 from uvicorn.logging import TRACE_LOG_LEVEL
-from uvicorn.protocols.http.flow_control import (
-    CLOSE_HEADER,
-    HIGH_WATER_LIMIT,
-    FlowControl,
-    service_unavailable,
-)
-from uvicorn.protocols.utils import (
-    get_client_addr,
-    get_local_addr,
-    get_path_with_query_string,
-    get_remote_addr,
-    is_ssl,
-)
+from uvicorn.protocols.http.flow_control import CLOSE_HEADER, HIGH_WATER_LIMIT, FlowControl, service_unavailable
+from uvicorn.protocols.utils import get_client_addr, get_local_addr, get_path_with_query_string, get_remote_addr, is_ssl
 from uvicorn.server import ServerState
 
 
@@ -43,9 +32,7 @@ def _get_status_phrase(status_code: int) -> bytes:
         return b""
 
 
-STATUS_PHRASES = {
-    status_code: _get_status_phrase(status_code) for status_code in range(100, 600)
-}
+STATUS_PHRASES = {status_code: _get_status_phrase(status_code) for status_code in range(100, 600)}
 
 
 class H11Protocol(asyncio.Protocol):
@@ -203,10 +190,7 @@ class H11Protocol(asyncio.Protocol):
                 full_raw_path = self.root_path.encode("ascii") + raw_path
                 self.scope = {
                     "type": "http",
-                    "asgi": {
-                        "version": self.config.asgi_version,
-                        "spec_version": "2.3",
-                    },
+                    "asgi": {"version": self.config.asgi_version, "spec_version": "2.3"},
                     "http_version": event.http_version.decode("ascii"),
                     "server": self.server,
                     "client": self.client,
@@ -227,8 +211,7 @@ class H11Protocol(asyncio.Protocol):
 
                 # Handle 503 responses when 'limit_concurrency' is exceeded.
                 if self.limit_concurrency is not None and (
-                    len(self.connections) >= self.limit_concurrency
-                    or len(self.tasks) >= self.limit_concurrency
+                    len(self.connections) >= self.limit_concurrency or len(self.tasks) >= self.limit_concurrency
                 ):
                     app = service_unavailable
                     message = "Exceeded concurrency limit."
@@ -287,9 +270,7 @@ class H11Protocol(asyncio.Protocol):
             output += [name, b": ", value, b"\r\n"]
         output.append(b"\r\n")
         protocol = self.ws_protocol_class(  # type: ignore[call-arg, misc]
-            config=self.config,
-            server_state=self.server_state,
-            app_state=self.app_state,
+            config=self.config, server_state=self.server_state, app_state=self.app_state
         )
         protocol.connection_made(self.transport)
         protocol.data_received(b"".join(output))
@@ -322,9 +303,7 @@ class H11Protocol(asyncio.Protocol):
         # Set a short Keep-Alive timeout.
         self._unset_keepalive_if_required()
 
-        self.timeout_keep_alive_task = self.loop.call_later(
-            self.timeout_keep_alive, self.timeout_keep_alive_handler
-        )
+        self.timeout_keep_alive_task = self.loop.call_later(self.timeout_keep_alive, self.timeout_keep_alive_handler)
 
         # Unpause data reads if needed.
         self.flow.resume_reading()
@@ -439,10 +418,7 @@ class RequestResponseCycle:
         response_start_event: "HTTPResponseStartEvent" = {
             "type": "http.response.start",
             "status": 500,
-            "headers": [
-                (b"content-type", b"text/plain; charset=utf-8"),
-                (b"connection", b"close"),
-            ],
+            "headers": [(b"content-type", b"text/plain; charset=utf-8"), (b"connection", b"close")],
         }
         await self.send(response_start_event)
         response_body_event: "HTTPResponseBodyEvent" = {
@@ -530,9 +506,7 @@ class RequestResponseCycle:
     async def receive(self) -> "ASGIReceiveEvent":
         if self.waiting_for_100_continue and not self.transport.is_closing():
             headers: list[tuple[str, str]] = []
-            event = h11.InformationalResponse(
-                status_code=100, headers=headers, reason="Continue"
-            )
+            event = h11.InformationalResponse(status_code=100, headers=headers, reason="Continue")
             output = self.conn.send(event=event)
             self.transport.write(output)
             self.waiting_for_100_continue = False
@@ -545,10 +519,6 @@ class RequestResponseCycle:
         if self.disconnected or self.response_complete:
             return {"type": "http.disconnect"}
 
-        message: "HTTPRequestEvent" = {
-            "type": "http.request",
-            "body": self.body,
-            "more_body": self.more_body,
-        }
+        message: "HTTPRequestEvent" = {"type": "http.request", "body": self.body, "more_body": self.more_body}
         self.body = b""
         return message

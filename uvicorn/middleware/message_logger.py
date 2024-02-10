@@ -44,12 +44,7 @@ class MessageLoggerMiddleware:
 
         self.logger.trace = trace  # type: ignore
 
-    async def __call__(
-        self,
-        scope: "WWWScope",
-        receive: "ASGIReceiveCallable",
-        send: "ASGISendCallable",
-    ) -> None:
+    async def __call__(self, scope: "WWWScope", receive: "ASGIReceiveCallable", send: "ASGISendCallable") -> None:
         self.task_counter += 1
 
         task_counter = self.task_counter

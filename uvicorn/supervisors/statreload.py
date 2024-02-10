@@ -12,21 +12,13 @@ logger = logging.getLogger("uvicorn.error")
 
 
 class StatReload(BaseReload):
-    def __init__(
-        self,
-        config: Config,
-        target: Callable[[list[socket] | None], None],
-        sockets: list[socket],
-    ) -> None:
+    def __init__(self, config: Config, target: Callable[[list[socket] | None], None], sockets: list[socket]) -> None:
         super().__init__(config, target, sockets)
         self.reloader_name = "StatReload"
         self.mtimes: dict[Path, float] = {}
 
         if config.reload_excludes or config.reload_includes:
-            logger.warning(
-                "--reload-include and --reload-exclude have no effect unless "
-                "watchfiles is installed."
-            )
+            logger.warning("--reload-include and --reload-exclude have no effect unless " "watchfiles is installed.")
 
     def should_restart(self) -> list[Path] | None:
         self.pause()

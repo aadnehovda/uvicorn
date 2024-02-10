@@ -61,11 +61,16 @@ path = "uvicorn/__init__.py"
 include = ["/uvicorn"]
 
 [tool.ruff]
-select = ["E", "F", "I"]
+line-length = 120
+select = ["E", "F", "I", "FA"]
 ignore = ["B904", "B028"]
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
+split-on-trailing-comma = false
 
 [tool.mypy]
 warn_unused_ignores = true

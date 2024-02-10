@@ -23,12 +23,7 @@ logger = logging.getLogger("uvicorn.error")
 
 
 class Multiprocess:
-    def __init__(
-        self,
-        config: Config,
-        target: Callable[[list[socket] | None], None],
-        sockets: list[socket],
-    ) -> None:
+    def __init__(self, config: Config, target: Callable[[list[socket] | None], None], sockets: list[socket]) -> None:
         self.config = config
         self.target = target
         self.sockets = sockets
@@ -49,18 +44,14 @@ class Multiprocess:
 
     def startup(self) -> None:
         message = "Started parent process [{}]".format(str(self.pid))
-        color_message = "Started parent process [{}]".format(
-            click.style(str(self.pid), fg="cyan", bold=True)
-        )
+        color_message = "Started parent process [{}]".format(click.style(str(self.pid), fg="cyan", bold=True))
         logger.info(message, extra={"color_message": color_message})
 
         for sig in HANDLED_SIGNALS:
             signal.signal(sig, self.signal_handler)
 
         for _idx in range(self.config.workers):
-            process = get_subprocess(
-                config=self.config, target=self.target, sockets=self.sockets
-            )
+            process = get_subprocess(config=self.config, target=self.target, sockets=self.sockets)
             process.start()
             self.processes.append(process)
 
@@ -70,7 +61,5 @@ class Multiprocess:
             process.join()
 
         message = "Stopping parent process [{}]".format(str(self.pid))
-        color_message = "Stopping parent process [{}]".format(
-            click.style(str(self.pid), fg="cyan", bold=True)
-        )
+        color_message = "Stopping parent process [{}]".format(click.style(str(self.pid), fg="cyan", bold=True))
         logger.info(message, extra={"color_message": color_message})

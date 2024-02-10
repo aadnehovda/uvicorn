@@ -42,12 +42,7 @@ def test_cli_print_version() -> None:
     assert result.exit_code == 0
     assert (
         "Running uvicorn %s with %s %s on %s"
-        % (
-            uvicorn.__version__,
-            platform.python_implementation(),
-            platform.python_version(),
-            platform.system(),
-        )
+        % (uvicorn.__version__, platform.python_implementation(), platform.python_version(), platform.system())
     ) in result.output
 
 
@@ -61,10 +56,7 @@ def test_cli_headers() -> None:
     assert result.exit_code == 0
     mock_run.assert_called_once()
     assert mock_run.call_args[1]["headers"] == [
-        [
-            "Content-Security-Policy",
-            "default-src 'self'; script-src https://example.com",
-        ]
+        ["Content-Security-Policy", "default-src 'self'; script-src https://example.com"]
     ]
 
 
@@ -103,9 +95,7 @@ def test_cli_call_multiprocess_run() -> None:
 
 
 @pytest.fixture(params=(True, False))
-def uds_file(
-    tmp_path: Path, request: pytest.FixtureRequest
-) -> Path:  # pragma: py-win32
+def uds_file(tmp_path: Path, request: pytest.FixtureRequest) -> Path:  # pragma: py-win32
     file = tmp_path / "uvicorn.sock"
     should_create_file = request.param
     if should_create_file:
@@ -119,9 +109,7 @@ def test_cli_uds(uds_file: Path) -> None:  # pragma: py-win32
 
     with mock.patch.object(Config, "bind_socket") as mock_bind_socket:
         with mock.patch.object(Multiprocess, "run") as mock_run:
-            result = runner.invoke(
-                cli, ["tests.test_cli:App", "--workers=2", "--uds", str(uds_file)]
-            )
+            result = runner.invoke(cli, ["tests.test_cli:App", "--workers=2", "--uds", str(uds_file)])
 
     assert result.exit_code == 0
     assert result.output == ""
@@ -136,8 +124,7 @@ def test_cli_incomplete_app_parameter() -> None:
     result = runner.invoke(cli, ["tests.test_cli"])
 
     assert (
-        'Error loading ASGI app. Import string "tests.test_cli" '
-        'must be in format "<module>:<attribute>".'
+        'Error loading ASGI app. Import string "tests.test_cli" ' 'must be in format "<module>:<attribute>".'
     ) in result.output
     assert result.exit_code == 1
 
@@ -146,10 +133,7 @@ def test_cli_event_size() -> None:
     runner = CliRunner()
 
     with mock.patch.object(main, "run") as mock_run:
-        result = runner.invoke(
-            cli,
-            ["tests.test_cli:App", "--h11-max-incomplete-event-size", str(32 * 1024)],
-        )
+        result = runner.invoke(cli, ["tests.test_cli:App", "--h11-max-incomplete-event-size", str(32 * 1024)])
 
     assert result.output == ""
     assert result.exit_code == 0

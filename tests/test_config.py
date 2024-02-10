@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -5,7 +7,7 @@ import socket
 import sys
 import typing
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,14 +15,7 @@ import yaml
 from pytest_mock import MockerFixture
 
 from tests.utils import as_cwd
-from uvicorn._types import (
-    ASGIApplication,
-    ASGIReceiveCallable,
-    ASGISendCallable,
-    Environ,
-    Scope,
-    StartResponse,
-)
+from uvicorn._types import ASGIApplication, ASGIReceiveCallable, ASGISendCallable, Environ, Scope, StartResponse
 from uvicorn.config import Config
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from uvicorn.middleware.wsgi import WSGIMiddleware
@@ -42,9 +37,7 @@ def yaml_logging_config(logging_config: dict) -> str:
     return yaml.dump(logging_config)
 
 
-async def asgi_app(
-    scope: "Scope", receive: "ASGIReceiveCallable", send: "ASGISendCallable"
-) -> None:
+async def asgi_app(scope: "Scope", receive: "ASGIReceiveCallable", send: "ASGISendCallable") -> None:
     pass  # pragma: nocover
 
 
@@ -52,69 +45,45 @@ def wsgi_app(environ: Environ, start_response: StartResponse) -> None:
     pass  # pragma: nocover
 
 
-@pytest.mark.parametrize(
-    "app, expected_should_reload",
-    [(asgi_app, False), ("tests.test_config:asgi_app", True)],
-)
-def test_config_should_reload_is_set(
-    app: "ASGIApplication", expected_should_reload: bool
-) -> None:
+@pytest.mark.parametrize("app, expected_should_reload", [(asgi_app, False), ("tests.test_config:asgi_app", True)])
+def test_config_should_reload_is_set(app: "ASGIApplication", expected_should_reload: bool) -> None:
     config = Config(app=app, reload=True)
     assert config.reload is True
     assert config.should_reload is expected_should_reload
 
 
-def test_should_warn_on_invalid_reload_configuration(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_should_warn_on_invalid_reload_configuration(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     config_class = Config(app=asgi_app, reload_dirs=[str(tmp_path)])
     assert not config_class.should_reload
     assert len(caplog.records) == 1
     assert (
-        caplog.records[-1].message
-        == "Current configuration will not reload as not all conditions are met, "
+        caplog.records[-1].message == "Current configuration will not reload as not all conditions are met, "
         "please refer to documentation."
     )
 
-    config_no_reload = Config(
-        app="tests.test_config:asgi_app", reload_dirs=[str(tmp_path)]
-    )
+    config_no_reload = Config(app="tests.test_config:asgi_app", reload_dirs=[str(tmp_path)])
     assert not config_no_reload.should_reload
     assert len(caplog.records) == 2
     assert (
-        caplog.records[-1].message
-        == "Current configuration will not reload as not all conditions are met, "
+        caplog.records[-1].message == "Current configuration will not reload as not all conditions are met, "
         "please refer to documentation."
     )
 
 
-def test_reload_dir_is_set(
-    reload_directory_structure: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_reload_dir_is_set(reload_directory_structure: Path, caplog: pytest.LogCaptureFixture) -> None:
     app_dir = reload_directory_structure / "app"
     with caplog.at_level(logging.INFO):
-        config = Config(
-            app="tests.test_config:asgi_app", reload=True, reload_dirs=[str(app_dir)]
-        )
+        config = Config(app="tests.test_config:asgi_app", reload=True, reload_dirs=[str(app_dir)])
         assert len(caplog.records) == 1
-        assert (
-            caplog.records[-1].message
-            == f"Will watch for changes in these directories: {[str(app_dir)]}"
-        )
+        assert caplog.records[-1].message == f"Will watch for changes in these directories: {[str(app_dir)]}"
         assert config.reload_dirs == [app_dir]
-        config = Config(
-            app="tests.test_config:asgi_app", reload=True, reload_dirs=str(app_dir)
-        )
+        config = Config(app="tests.test_config:asgi_app", reload=True, reload_dirs=str(app_dir))
         assert config.reload_dirs == [app_dir]
 
 
-def test_non_existant_reload_dir_is_not_set(
-    reload_directory_structure: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_non_existant_reload_dir_is_not_set(reload_directory_structure: Path, caplog: pytest.LogCaptureFixture) -> None:
     with as_cwd(reload_directory_structure), caplog.at_level(logging.WARNING):
-        config = Config(
-            app="tests.test_config:asgi_app", reload=True, reload_dirs=["reload"]
-        )
+        config = Config(app="tests.test_config:asgi_app", reload=True, reload_dirs=["reload"])
         assert config.reload_dirs == [reload_directory_structure]
         assert (
             caplog.records[-1].message
@@ -129,15 +98,11 @@ def test_reload_subdir_removal(reload_directory_structure: Path) -> None:
     reload_dirs = [str(reload_directory_structure), "app", str(app_dir)]
 
     with as_cwd(reload_directory_structure):
-        config = Config(
-            app="tests.test_config:asgi_app", reload=True, reload_dirs=reload_dirs
-        )
+        config = Config(app="tests.test_config:asgi_app", reload=True, reload_dirs=reload_dirs)
         assert config.reload_dirs == [reload_directory_structure]
 
 
-def test_reload_included_dir_is_added_to_reload_dirs(
-    reload_directory_structure: Path,
-) -> None:
+def test_reload_included_dir_is_added_to_reload_dirs(reload_directory_structure: Path) -> None:
     app_dir = reload_directory_structure / "app"
     ext_dir = reload_directory_structure / "ext"
 
@@ -152,9 +117,7 @@ def test_reload_included_dir_is_added_to_reload_dirs(
         assert frozenset(config.reload_includes) == frozenset(["*.js", str(ext_dir)])
 
 
-def test_reload_dir_subdirectories_are_removed(
-    reload_directory_structure: Path,
-) -> None:
+def test_reload_dir_subdirectories_are_removed(reload_directory_structure: Path) -> None:
     app_dir = reload_directory_structure / "app"
     app_sub_dir = app_dir / "sub"
     ext_dir = reload_directory_structure / "ext"
@@ -164,33 +127,20 @@ def test_reload_dir_subdirectories_are_removed(
         config = Config(
             app="tests.test_config:asgi_app",
             reload=True,
-            reload_dirs=[
-                str(app_dir),
-                str(app_sub_dir),
-                str(ext_sub_dir),
-                str(ext_dir),
-            ],
+            reload_dirs=[str(app_dir), str(app_sub_dir), str(ext_sub_dir), str(ext_dir)],
         )
         assert frozenset(config.reload_dirs) == frozenset([app_dir, ext_dir])
 
 
-def test_reload_excluded_subdirectories_are_removed(
-    reload_directory_structure: Path,
-) -> None:
+def test_reload_excluded_subdirectories_are_removed(reload_directory_structure: Path) -> None:
     app_dir = reload_directory_structure / "app"
     app_sub_dir = app_dir / "sub"
 
     with as_cwd(reload_directory_structure):
-        config = Config(
-            app="tests.test_config:asgi_app",
-            reload=True,
-            reload_excludes=[str(app_dir), str(app_sub_dir)],
-        )
+        config = Config(app="tests.test_config:asgi_app", reload=True, reload_excludes=[str(app_dir), str(app_sub_dir)])
         assert frozenset(config.reload_dirs) == frozenset([reload_directory_structure])
         assert frozenset(config.reload_dirs_excludes) == frozenset([app_dir])
-        assert frozenset(config.reload_excludes) == frozenset(
-            [str(app_dir), str(app_sub_dir)]
-        )
+        assert frozenset(config.reload_excludes) == frozenset([str(app_dir), str(app_sub_dir)])
 
 
 def test_reload_includes_exclude_dir_patterns_are_matched(
@@ -209,13 +159,10 @@ def test_reload_includes_exclude_dir_patterns_are_matched(
             )
             assert len(caplog.records) == 1
             assert (
-                caplog.records[-1].message
-                == "Will watch for changes in these directories: "
+                caplog.records[-1].message == "Will watch for changes in these directories: "
                 f"{sorted([str(first_app_dir), str(second_app_dir)])}"
             )
-            assert frozenset(config.reload_dirs) == frozenset(
-                [first_app_dir, second_app_dir]
-            )
+            assert frozenset(config.reload_dirs) == frozenset([first_app_dir, second_app_dir])
             assert config.reload_includes == ["*/src"]
 
 
@@ -247,9 +194,7 @@ def test_app_unimportable_other(caplog: pytest.LogCaptureFixture) -> None:
     with pytest.raises(SystemExit):
         config.load()
     error_messages = [
-        record.message
-        for record in caplog.records
-        if record.name == "uvicorn.error" and record.levelname == "ERROR"
+        record.message for record in caplog.records if record.name == "uvicorn.error" and record.levelname == "ERROR"
     ]
     assert (
         'Error loading ASGI app. Attribute "app" not found in module "tests.test_config".'  # noqa: E501
@@ -295,14 +240,9 @@ def test_socket_bind() -> None:
     sock.close()
 
 
-def test_ssl_config(
-    tls_ca_certificate_pem_path: str,
-    tls_ca_certificate_private_key_path: str,
-) -> None:
+def test_ssl_config(tls_ca_certificate_pem_path: str, tls_ca_certificate_private_key_path: str) -> None:
     config = Config(
-        app=asgi_app,
-        ssl_certfile=tls_ca_certificate_pem_path,
-        ssl_keyfile=tls_ca_certificate_private_key_path,
+        app=asgi_app, ssl_certfile=tls_ca_certificate_pem_path, ssl_keyfile=tls_ca_certificate_private_key_path
     )
     config.load()
 
@@ -310,30 +250,21 @@ def test_ssl_config(
 
 
 def test_ssl_config_combined(tls_certificate_key_and_chain_path: str) -> None:
-    config = Config(
-        app=asgi_app,
-        ssl_certfile=tls_certificate_key_and_chain_path,
-    )
+    config = Config(app=asgi_app, ssl_certfile=tls_certificate_key_and_chain_path)
     config.load()
 
     assert config.is_ssl is True
 
 
 def asgi2_app(scope: "Scope") -> typing.Callable:
-    async def asgi(
-        receive: "ASGIReceiveCallable", send: "ASGISendCallable"
-    ) -> None:  # pragma: nocover
+    async def asgi(receive: "ASGIReceiveCallable", send: "ASGISendCallable") -> None:  # pragma: nocover
         pass
 
     return asgi  # pragma: nocover
 
 
-@pytest.mark.parametrize(
-    "app, expected_interface", [(asgi_app, "3.0"), (asgi2_app, "2.0")]
-)
-def test_asgi_version(
-    app: "ASGIApplication", expected_interface: Literal["2.0", "3.0"]
-) -> None:
+@pytest.mark.parametrize("app, expected_interface", [(asgi_app, "3.0"), (asgi2_app, "2.0")])
+def test_asgi_version(app: "ASGIApplication", expected_interface: Literal["2.0", "3.0"]) -> None:
     config = Config(app=app)
     config.load()
     assert config.asgi_version == expected_interface
@@ -349,10 +280,7 @@ def test_asgi_version(
     ],
 )
 def test_log_config_default(
-    mocked_logging_config_module: MagicMock,
-    use_colors: typing.Optional[bool],
-    expected: typing.Optional[bool],
-    logging_config,
+    mocked_logging_config_module: MagicMock, use_colors: bool | None, expected: bool | None, logging_config
 ) -> None:
     """
     Test that one can specify the use_colors option when using the default logging
@@ -368,17 +296,12 @@ def test_log_config_default(
 
 
 def test_log_config_json(
-    mocked_logging_config_module: MagicMock,
-    logging_config: dict,
-    json_logging_config: str,
-    mocker: MockerFixture,
+    mocked_logging_config_module: MagicMock, logging_config: dict, json_logging_config: str, mocker: MockerFixture
 ) -> None:
     """
     Test that one can load a json config from disk.
     """
-    mocked_open = mocker.patch(
-        "uvicorn.config.open", mocker.mock_open(read_data=json_logging_config)
-    )
+    mocked_open = mocker.patch("uvicorn.config.open", mocker.mock_open(read_data=json_logging_config))
 
     config = Config(app=asgi_app, log_config="log_config.json")
     config.load()
@@ -398,9 +321,7 @@ def test_log_config_yaml(
     """
     Test that one can load a yaml config from disk.
     """
-    mocked_open = mocker.patch(
-        "uvicorn.config.open", mocker.mock_open(read_data=yaml_logging_config)
-    )
+    mocked_open = mocker.patch("uvicorn.config.open", mocker.mock_open(read_data=yaml_logging_config))
 
     config = Config(app=asgi_app, log_config=config_filename)
     config.load()
@@ -416,9 +337,7 @@ def test_log_config_file(mocked_logging_config_module: MagicMock) -> None:
     config = Config(app=asgi_app, log_config="log_config")
     config.load()
 
-    mocked_logging_config_module.fileConfig.assert_called_once_with(
-        "log_config", disable_existing_loggers=False
-    )
+    mocked_logging_config_module.fileConfig.assert_called_once_with("log_config", disable_existing_loggers=False)
 
 
 @pytest.fixture(params=[0, 1])
@@ -436,19 +355,13 @@ def forwarded_allow_ips(request: pytest.FixtureRequest) -> typing.Iterator[str]:
 
 
 def test_env_file(
-    web_concurrency: int,
-    forwarded_allow_ips: str,
-    caplog: pytest.LogCaptureFixture,
-    tmp_path: Path,
+    web_concurrency: int, forwarded_allow_ips: str, caplog: pytest.LogCaptureFixture, tmp_path: Path
 ) -> None:
     """
     Test that one can load environment variables using an env file.
     """
     fp = tmp_path / ".env"
-    content = (
-        f"WEB_CONCURRENCY={web_concurrency}\n"
-        f"FORWARDED_ALLOW_IPS={forwarded_allow_ips}\n"
-    )
+    content = f"WEB_CONCURRENCY={web_concurrency}\n" f"FORWARDED_ALLOW_IPS={forwarded_allow_ips}\n"
     fp.write_text(content)
     with caplog.at_level(logging.INFO):
         config = Config(app=asgi_app, env_file=fp)
@@ -488,16 +401,12 @@ def test_config_log_level(log_level: int) -> None:
 
 @pytest.mark.parametrize("log_level", [None, 0, 5, 10, 20, 30, 40, 50])
 @pytest.mark.parametrize("uvicorn_logger_level", [0, 5, 10, 20, 30, 40, 50])
-def test_config_log_effective_level(
-    log_level: Optional[int], uvicorn_logger_level: Optional[int]
-) -> None:
+def test_config_log_effective_level(log_level: int | None, uvicorn_logger_level: int | None) -> None:
     default_level = 30
     log_config = {
         "version": 1,
         "disable_existing_loggers": False,
-        "loggers": {
-            "uvicorn": {"level": uvicorn_logger_level},
-        },
+        "loggers": {"uvicorn": {"level": uvicorn_logger_level}},
     }
     config = Config(app=asgi_app, log_level=log_level, log_config=log_config)
     config.load()
@@ -521,12 +430,7 @@ def test_ws_max_queue() -> None:
 
 
 @pytest.mark.parametrize(
-    "reload, workers",
-    [
-        (True, 1),
-        (False, 2),
-    ],
-    ids=["--reload=True --workers=1", "--reload=False --workers=2"],
+    "reload, workers", [(True, 1), (False, 2)], ids=["--reload=True --workers=1", "--reload=False --workers=2"]
 )
 @pytest.mark.skipif(sys.platform == "win32", reason="require unix-like system")
 def test_bind_unix_socket_works_with_reload_or_workers(
@@ -542,12 +446,7 @@ def test_bind_unix_socket_works_with_reload_or_workers(
 
 
 @pytest.mark.parametrize(
-    "reload, workers",
-    [
-        (True, 1),
-        (False, 2),
-    ],
-    ids=["--reload=True --workers=1", "--reload=False --workers=2"],
+    "reload, workers", [(True, 1), (False, 2)], ids=["--reload=True --workers=1", "--reload=False --workers=2"]
 )
 @pytest.mark.skipif(sys.platform == "win32", reason="require unix-like system")
 def test_bind_fd_works_with_reload_or_workers(reload, workers):  # pragma: py-win32
@@ -565,16 +464,8 @@ def test_bind_fd_works_with_reload_or_workers(reload, workers):  # pragma: py-wi
 
 @pytest.mark.parametrize(
     "reload, workers, expected",
-    [
-        (True, 1, True),
-        (False, 2, True),
-        (False, 1, False),
-    ],
-    ids=[
-        "--reload=True --workers=1",
-        "--reload=False --workers=2",
-        "--reload=False --workers=1",
-    ],
+    [(True, 1, True), (False, 2, True), (False, 1, False)],
+    ids=["--reload=True --workers=1", "--reload=False --workers=2", "--reload=False --workers=1"],
 )
 def test_config_use_subprocess(reload, workers, expected):
     config = Config(app=asgi_app, reload=reload, workers=workers)
@@ -585,7 +476,4 @@ def test_config_use_subprocess(reload, workers, expected):
 def test_warn_when_using_reload_and_workers(caplog: pytest.LogCaptureFixture) -> None:
     Config(app=asgi_app, reload=True, workers=2)
     assert len(caplog.records) == 1
-    assert (
-        '"workers" flag is ignored when reloading is enabled.'
-        in caplog.records[0].message
-    )
+    assert '"workers" flag is ignored when reloading is enabled.' in caplog.records[0].message
